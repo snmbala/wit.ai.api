@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART Goal Parser</title>
+</head>
+<body>
+    <h1>SMART Goal Parser</h1>
+    <div id="conversation">
+        <p>What is your goal?</p>
+        <form id="goalForm">
+            <input type="text" id="goalInput" name="goal" required>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById('goalForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const goalInput = document.getElementById('goalInput').value;
+            const conversationDiv = document.getElementById('conversation');
+
+            try {
+                const response = await fetch('/analyze-goal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ goal: goalInput })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+
+                if (data.deadline) {
+                    conversationDiv.innerHTML = `<p>Your goal is: ${goalInput}</p><p>Deadline: ${data.deadline}</p>`;
+                } else {
+                    conversationDiv.innerHTML = `<p>Your goal is: ${goalInput}</p>
+                        <p>When do you want to achieve it?</p>
+                        <form id="deadlineForm">
+                            ${data.options.filter(option => option !== 'custom').map(option => `
+                                <label>
+                                    <input type="radio" name="deadline" value="${option}"> ${option}
+                                </label>
+                            `).join('')}
+                            <label>
+                                <input type="radio" name="deadline" value="custom"> Custom
+                                <input type="date" id="customDeadline" name="customDeadline" disabled>
+                            </label>
+                            <button type="submit">Submit</button>
+                        </form>`;
+
+                    document.querySelectorAll('input[name="deadline"]').forEach(input => {
+                        input.addEventListener('change', function() {
+                            const customInput = document.getElementById('customDeadline');
+                            customInput.disabled = this.value !== 'custom';
+                            if (this.value !== 'custom') {
+                                customInput.value = '';
+                            }
+                        });
+                    });
+
+                    document.getElementById('deadlineForm').addEventListener('submit', function(event) {
+                        event.preventDefault();
+                        const selectedDeadline = document.querySelector('input[name="deadline"]:checked').value;
+                        const customDeadline = document.getElementById('customDeadline').value;
+                        const finalDeadline = selectedDeadline === 'custom' ? customDeadline : selectedDeadline;
+
+                        conversationDiv.innerHTML = `<p>Your goal is: ${goalInput}</p><p>Deadline: ${finalDeadline}</p>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                conversationDiv.innerText = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
