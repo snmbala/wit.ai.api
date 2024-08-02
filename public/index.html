@@ -34,14 +34,18 @@
                 }
 
                 const data = await response.json();
+                console.log('Response Data:', data);
 
                 if (data.deadline) {
                     conversationDiv.innerHTML = `<p>Your goal is: ${goalInput}</p><p>Deadline: ${data.deadline}</p>`;
                 } else {
+                    // Ensure data.options is defined and is an array
+                    const options = Array.isArray(data.options) ? data.options : [];
+                    
                     conversationDiv.innerHTML = `<p>Your goal is: ${goalInput}</p>
                         <p>When do you want to achieve it?</p>
                         <form id="deadlineForm">
-                            ${data.options.filter(option => option !== 'custom').map(option => `
+                            ${options.filter(option => option !== 'custom').map(option => `
                                 <label>
                                     <input type="radio" name="deadline" value="${option}"> ${option}
                                 </label>

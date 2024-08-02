@@ -30,13 +30,26 @@ app.post('/analyze-goal', async (req, res) => {
         }
 
         const data = await response.json();
+        console.log('Wit.ai API response:', data);
+
         const entities = data.entities;
 
-        const timeEntity = entities['wit$datetime:datetime'] || [];
-        const deadline = timeEntity.length > 0 ? timeEntity[0].value : null;
+        // Extract datetime entity
+        const datetimeEntity = entities['wit$datetime:datetime'] ? entities['wit$datetime:datetime'][0] : null;
+        const datetimeValue = datetimeEntity ? datetimeEntity.value : null;
 
-        if (deadline) {
-            return res.json({ deadline });
+        // Extract quantity entity
+        const quantityEntity = entities['wit$quantity:quantity'] ? entities['wit$quantity:quantity'][0] : null;
+        const quantityValue = quantityEntity ? quantityEntity.value : null;
+
+        console.log('Datetime Entity:', datetimeEntity);
+        console.log('Datetime Value:', datetimeValue);
+        console.log('Quantity Entity:', quantityEntity);
+        console.log('Quantity Value:', quantityValue);
+
+        // Determine response based on datetime value
+        if (datetimeValue) {
+            return res.json({ deadline: datetimeValue });
         } else {
             return res.json({ options: ['3 months', '6 months', 'end of this year', 'custom'] });
         }
